@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,29 +6,143 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { mockUser } from '@/data/mockData';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+
+const initialInfo = {
+  full_name: '',
+  email: '',
+  role: '',
+  organization: '',
+  bio: '',
+};
 
 const Profile = () => {
-  const [user, setUser] = useState(mockUser);
+  const [info, setInfo] = useState(initialInfo);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  const handleSave = () => {
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been updated successfully.",
-    });
+  const navigate = useNavigate();
+
+  // Fetch user info on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError('Not logged in.');
+        setLoading(false);
+        return;
+      }
+      const email = user.email;
+      let name = user.user_metadata?.name || '';
+      if (!email) {
+        setError('No email found for user.');
+        setLoading(false);
+        return;
+      }
+      // Try to fetch from users_personal_information
+      const { data, error: fetchError } = await supabase
+        .from('users_personal_information')
+        .select('*')
+        .eq('email', email)
+        .single();
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        setError('Failed to fetch user info.');
+        setLoading(false);
+        return;
+      }
+      if (!data) {
+        // Insert new record if not found
+        const { error: insertError } = await supabase
+          .from('users_personal_information')
+          .insert([{ email, full_name: name }]);
+        if (insertError) {
+          setError('Failed to create user info.');
+          setLoading(false);
+          return;
+        }
+        setInfo({ ...initialInfo, email, full_name: name });
+      } else {
+        setInfo({
+          full_name: data.full_name || '',
+          email: data.email || '',
+          role: data.role || '',
+          organization: data.organization || '',
+          bio: data.bio || '',
+        });
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setInfo({ ...info, [e.target.id]: e.target.value });
   };
+
+  const validate = () => {
+    if (!info.full_name.trim()) return 'Full name is required.';
+    if (!info.email.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(info.email)) return 'Valid email is required.';
+    return null;
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      setSaving(false);
+      return;
+    }
+    // Upsert user info
+    const { error: upsertError } = await supabase
+      .from('users_personal_information')
+      .upsert({
+        email: info.email,
+        full_name: info.full_name,
+        role: info.role,
+        organization: info.organization,
+        bio: info.bio,
+      }, { onConflict: 'email' });
+    setSaving(false);
+    if (upsertError) {
+      setError('Failed to save info.');
+    } else {
+    toast({
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully.',
+    });
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
+  if (loading) {
+    return <AppLayout><div className="max-w-4xl mx-auto p-8">Loading...</div></AppLayout>;
+  }
   
   return (
     <AppLayout>
-      <div className="animate-fade-in max-w-4xl mx-auto">
+      <div className="animate-fade-in max-w-4xl mx-auto relative">
+        <button
+          onClick={handleLogout}
+          className="absolute right-0 top-0 mt-2 mr-2 px-4 py-2 bg-green-900 text-white rounded hover:bg-green-800 transition"
+        >
+          Logout
+        </button>
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">My Profile</h1>
           <p className="text-muted-foreground">Manage your account settings and preferences</p>
         </div>
-        
         <Tabs defaultValue="general" className="mb-8">
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
@@ -47,41 +160,33 @@ const Profile = () => {
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
                     <AvatarFallback className="text-2xl bg-ai-blue text-white">
-                      {user.name.split(' ').map(n => n[0]).join('')}
+                      {info.full_name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <Button variant="outline" size="sm">Change Avatar</Button>
-                    <p className="text-sm text-muted-foreground mt-1">JPG, GIF or PNG. Max size 2MB.</p>
-                  </div>
                 </div>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue={user.name} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue={user.email} />
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input id="full_name" value={info.full_name} onChange={handleChange} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Input id="role" defaultValue={user.role} />
+                    <Input id="role" value={info.role} onChange={handleChange} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="organization">Organization</Label>
-                    <Input id="organization" defaultValue={user.organization} />
+                    <Input id="organization" value={info.organization} onChange={handleChange} />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="bio">Bio</Label>
-                    <Textarea id="bio" rows={4} placeholder="Tell us about yourself..." />
+                    <Textarea id="bio" rows={4} placeholder="Tell us about yourself..." value={info.bio} onChange={handleChange} />
                   </div>
                 </div>
+                {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
               </CardContent>
               <CardFooter className="flex justify-end gap-3">
-                <Button variant="outline">Cancel</Button>
-                <Button onClick={handleSave}>Save Changes</Button>
+                <Button variant="outline" onClick={() => window.location.reload()}>Cancel</Button>
+                <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
               </CardFooter>
             </Card>
           </TabsContent>

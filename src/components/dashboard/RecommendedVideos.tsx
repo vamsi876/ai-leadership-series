@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,6 +7,7 @@ interface Video {
   title: string;
   duration: string;
   thumbnail: string;
+  url?: string;
 }
 
 interface RecommendedVideosProps {
@@ -21,19 +21,23 @@ export const RecommendedVideos = ({ videos }: RecommendedVideosProps) => {
         <CardTitle>Recommended Videos</CardTitle>
         <CardDescription>Leadership training videos for you</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {videos.map((video) => (
-          <Link key={video.id} to={`/videos/${video.id}`}>
-            <div className="flex gap-3 cursor-pointer group">
-              <div className="relative w-24 h-16 rounded-md overflow-hidden flex-shrink-0">
+          <Link 
+            key={video.id} 
+            to={`/videos?play=${video.url}`}
+            state={{ videoTitle: video.title }}
+          >
+            <div className="flex gap-4 cursor-pointer group p-2 rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="relative w-32 h-20 rounded-md overflow-hidden flex-shrink-0">
                 <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                  <Play size={18} className="text-white" />
+                  <Play size={20} className="text-white" />
                 </div>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium line-clamp-2">{video.title}</p>
-                <p className="text-xs text-muted-foreground">{video.duration}</p>
+                <p className="text-xs text-muted-foreground mt-1">{video.duration}</p>
               </div>
             </div>
           </Link>

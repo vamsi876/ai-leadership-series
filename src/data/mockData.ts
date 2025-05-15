@@ -1,39 +1,69 @@
-
 // Mock data for AI Leadership platform
 
 export const mockCourses = [
   {
     id: '1',
-    title: 'AI Leadership Foundations',
-    description: 'Learn the fundamentals of leading in the age of artificial intelligence.',
+    title: 'AI Leadership Series',
+    description: 'Master the essential skills and knowledge needed to lead in the age of artificial intelligence.',
     image: 'https://images.unsplash.com/photo-1507146153580-69a1fe6d8aa1?q=80&w=2670&auto=format&fit=crop',
-    progress: 75,
-    modules: 5,
+    progress: 0,
+    modules: 4,
+  }
+];
+
+export const mockLessons = [
+  {
+    id: '1',
+    courseId: '1',
+    title: 'Introduction to Generative AI - Part 1',
+    description: 'Understanding the fundamental concepts of Generative AI and its applications',
+    content: 'This lesson covers the basics of Generative AI, including its core concepts, capabilities, and real-world applications.',
+    notes: 'Key points:\n- Understanding AI and Machine Learning basics\n- Introduction to Generative AI\n- Common use cases and applications\n- Impact on business and leadership',
+    order: 1,
+    duration: '45 min',
+    completed: false,
+    pdfUrl: 'https://elnzycwsjcgzbllzbvjw.supabase.co/storage/v1/object/sign/pdfs/1-Introduction-to-Generative-AI-Part-1.pdf?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2I3ZDkwYTI2LWU1NmMtNDc5MC1hMTBjLTU2OTA5NWIwZGViZCJ9.eyJ1cmwiOiJwZGZzLzEtSW50cm9kdWN0aW9uLXRvLUdlbmVyYXRpdmUtQUktUGFydC0xLnBkZiIsImlhdCI6MTc0NzM0NjUzNSwiZXhwIjoxNzQ3OTUxMzM1fQ.My87d9aJYwN9UdnXfcqdpMIE4-23GSPEBDTS8xGHlaU',
+    pdfTitle: 'Introduction to Generative AI - Part 1'
   },
   {
     id: '2',
-    title: 'Strategic AI Implementation',
-    description: 'Develop strategies for effectively implementing AI in your organization.',
-    image: 'https://images.unsplash.com/photo-1550784718-990c9b72bcae?q=80&w=2670&auto=format&fit=crop',
-    progress: 30,
-    modules: 8,
+    courseId: '1',
+    title: 'Introduction to Generative AI - Part 2',
+    description: 'Deep dive into advanced concepts and practical applications of Generative AI',
+    content: 'Building upon Part 1, this lesson explores advanced concepts and practical implementations of Generative AI in business contexts.',
+    notes: 'Key points:\n- Advanced Generative AI concepts\n- Practical implementation strategies\n- Business use cases\n- Integration considerations',
+    order: 2,
+    duration: '45 min',
+    completed: false,
+    pdfUrl: 'https://elnzycwsjcgzbllzbvjw.supabase.co/storage/v1/object/sign/pdfs/2-Introduction-to-Generative-AI-Part-2.pdf?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2I3ZDkwYTI2LWU1NmMtNDc5MC1hMTBjLTU2OTA5NWIwZGViZCJ9.eyJ1cmwiOiJwZGZzLzItSW50cm9kdWN0aW9uLXRvLUdlbmVyYXRpdmUtQUktUGFydC0yLnBkZiIsImlhdCI6MTc0NzM0NjcxNywiZXhwIjoxNzQ3OTUxNTE3fQ.4PgIJJrQaRnemlWWztin2xBDXxaESX6nuB18TdOtm-8',
+    pdfTitle: 'Introduction to Generative AI - Part 2'
   },
   {
     id: '3',
-    title: 'Ethical Considerations in AI',
-    description: 'Navigate the ethical challenges of AI adoption and implementation.',
-    image: 'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?q=80&w=2670&auto=format&fit=crop',
-    progress: 0,
-    modules: 6,
+    courseId: '1',
+    title: 'Generative AI: Using AI to Build Tools',
+    description: 'Learn how to leverage Generative AI to create powerful business tools and solutions',
+    content: 'This lesson focuses on practical applications of Generative AI in building business tools and automating processes.',
+    notes: 'Key points:\n- Tool development with AI\n- Automation strategies\n- Business process optimization\n- Implementation best practices',
+    order: 3,
+    duration: '40 min',
+    completed: false,
+    pdfUrl: 'https://elnzycwsjcgzbllzbvjw.supabase.co/storage/v1/object/sign/pdfs/3-Generative-AI-Using-AI-to-Build-Tools.pdf?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2I3ZDkwYTI2LWU1NmMtNDc5MC1hMTBjLTU2OTA5NWIwZGViZCJ9.eyJ1cmwiOiJwZGZzLzMtR2VuZXJhdGl2ZS1BSS1Vc2luZy1BSS10by1CdWlsZC1Ub29scy5wZGYiLCJpYXQiOjE3NDczNDY3MjgsImV4cCI6MTc0Nzk1MTUyOH0.HW0iKee7LCagho9cHFpW7hCwOOhfQeFadxD2e4cGyA4',
+    pdfTitle: 'Generative AI: Using AI to Build Tools'
   },
   {
     id: '4',
-    title: 'AI-Driven Decision Making',
-    description: 'Enhance your decision-making process with AI-powered insights and analytics.',
-    image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2670&auto=format&fit=crop',
-    progress: 10,
-    modules: 7,
-  },
+    courseId: '1',
+    title: 'Building Your Own Custom LLM',
+    description: 'Master the process of creating and customizing Large Language Models for your organization',
+    content: 'Advanced lesson covering the development and customization of Large Language Models for specific business needs.',
+    notes: 'Key points:\n- LLM architecture and components\n- Customization techniques\n- Training and fine-tuning\n- Deployment and maintenance',
+    order: 4,
+    duration: '50 min',
+    completed: false,
+    pdfUrl: 'https://elnzycwsjcgzbllzbvjw.supabase.co/storage/v1/object/sign/pdfs/4-Building-Your-Own-Custom-LLM%20(2).pdf?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2I3ZDkwYTI2LWU1NmMtNDc5MC1hMTBjLTU2OTA5NWIwZGViZCJ9.eyJ1cmwiOiJwZGZzLzQtQnVpbGRpbmctWW91ci1Pd24tQ3VzdG9tLUxMTSAoMikucGRmIiwiaWF0IjoxNzQ3MzQ2NzQyLCJleHAiOjE3NDc5NTE1NDJ9.TqTGPTuVMixFYqDfCehOd5U-pmX6QiBcIYCgvzXlC1g',
+    pdfTitle: 'Building Your Own Custom LLM'
+  }
 ];
 
 export const mockResources = [

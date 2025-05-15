@@ -1,89 +1,213 @@
-
+import React, { useEffect, useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { List, Search } from 'lucide-react';
-import { mockPrompts } from '@/data/mockData';
+import { Mail, Calendar, BarChart2, Smile, Edit3, List, MailOpen, MessageSquare, FileText, Users, Check, Copy, Search } from 'lucide-react';
 
-const PromptCategoryCard = ({ title, description, count }: { title: string, description: string, count: number }) => {
-  return (
-    <Card className="card-hover">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription className="mt-1">{description}</CardDescription>
-          </div>
-          <div className="p-3 rounded-full bg-ai-lightGray">
-            <List className="h-5 w-5 text-ai-blue" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">Contains {count} leadership prompts</p>
-      </CardContent>
-      <CardFooter>
-        <Button variant="outline" className="w-full">View Prompts</Button>
-      </CardFooter>
-    </Card>
-  );
+const iconMap: Record<string, React.ReactNode> = {
+  'calendar': <Calendar className="h-8 w-8 text-green-900" />,
+  'mail': <Mail className="h-8 w-8 text-green-900" />,
+  'bar-chart-2': <BarChart2 className="h-8 w-8 text-green-900" />,
+  'smile': <Smile className="h-8 w-8 text-green-900" />,
+  'edit-3': <Edit3 className="h-8 w-8 text-green-900" />,
+  'list': <List className="h-8 w-8 text-green-900" />,
+  'mail-open': <MailOpen className="h-8 w-8 text-green-900" />,
+  'message-square': <MessageSquare className="h-8 w-8 text-green-900" />,
+  'file-text': <FileText className="h-8 w-8 text-green-900" />,
+  'users': <Users className="h-8 w-8 text-green-900" />,
 };
 
-const popularPrompts = [
-  "Create a comprehensive AI adoption strategy for my team",
-  "Generate talking points for communicating AI changes to stakeholders",
-  "Develop a framework for ethical AI decision making",
-  "Create a checklist for evaluating AI vendors and solutions",
-  "Draft a communication plan for AI implementation",
-];
+interface Prompt {
+  id: string;
+  title: string;
+  description: string;
+  prompt_text: string;
+  category?: string;
+  icon?: string;
+}
 
-const Prompts = () => {
+const Prompts: React.FC = () => {
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [selected, setSelected] = useState<Prompt | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [displayCount, setDisplayCount] = useState(9);
+  const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const INITIAL_DISPLAY_COUNT = 9;
+
+  useEffect(() => {
+    const fetchPrompts = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.from('prompts').select('*').order('title');
+      if (!error && data) setPrompts(data);
+      setLoading(false);
+    };
+    fetchPrompts();
+  }, []);
+
+  const handleCopy = async (text: string, promptId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPromptId(promptId);
+      // Upsert prompt usage in Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('prompt_progress').upsert({
+          user_id: user.id,
+          prompt_id: promptId,
+          used: true,
+          used_at: new Date().toISOString(),
+        }, { onConflict: ['user_id', 'prompt_id'] });
+      }
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedPromptId(null);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const handleSeeMore = () => {
+    setDisplayCount(prev => prev + 9); // Load 3 more rows
+  };
+
+  const handleSeeLess = () => {
+    setDisplayCount(INITIAL_DISPLAY_COUNT); // Reset to initial 3 rows
+  };
+
+  // Filter prompts based on search query
+  const filteredPrompts = useMemo(() => {
+    if (!searchQuery.trim()) return prompts;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return prompts.filter(prompt => 
+      prompt.title.toLowerCase().includes(query) ||
+      prompt.description.toLowerCase().includes(query) ||
+      prompt.prompt_text.toLowerCase().includes(query)
+    );
+  }, [prompts, searchQuery]);
+
+  // Reset display count when search changes
+  useEffect(() => {
+    setDisplayCount(INITIAL_DISPLAY_COUNT);
+  }, [searchQuery]);
+
+  const displayedPrompts = filteredPrompts.slice(0, displayCount);
+  const hasMore = displayCount < filteredPrompts.length;
+  const isExpanded = displayCount > INITIAL_DISPLAY_COUNT;
+
   return (
     <AppLayout>
-      <div className="animate-fade-in">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Prompt Library</h1>
-          <p className="text-muted-foreground">Practical AI prompts for leadership applications</p>
-        </div>
-        
-        <div className="mb-8 max-w-2xl">
+      <div className="max-w-5xl mx-auto p-4">
+        <div className="flex flex-col gap-6 mb-6">
+          <h1 className="text-3xl font-bold">Prompt Library</h1>
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
             <Input 
-              placeholder="Search for prompts..." 
-              className="pl-9 py-6"
+              type="text"
+              placeholder="Search prompts by title, description, or content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 border-gray-200 focus:border-green-900 focus:ring-green-900"
             />
           </div>
         </div>
         
-        <div className="mb-8">
-          <h2 className="text-xl font-bold mb-4">Popular Prompts</h2>
-          <div className="space-y-3">
-            {popularPrompts.map((prompt, index) => (
-              <div 
-                key={index} 
-                className="p-4 bg-card border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-              >
-                <p>{prompt}</p>
+        {loading ? (
+          <div>Loading prompts...</div>
+        ) : (
+          <>
+            {filteredPrompts.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No prompts found matching "{searchQuery}"
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {displayedPrompts.map(prompt => (
+                    <div
+                      key={prompt.id}
+                      className="bg-white rounded-lg shadow p-5 flex flex-col gap-2 cursor-pointer border hover:border-green-900 transition"
+                      onClick={() => setSelected(prompt)}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        {prompt.icon && iconMap[prompt.icon]}
+                        <div className="font-semibold text-lg">{prompt.title}</div>
+          </div>
+                      <div className="text-gray-700 text-sm line-clamp-3">{prompt.description}</div>
+        </div>
             ))}
           </div>
+                <div className="mt-8 flex justify-center gap-4">
+                  {hasMore && (
+                    <Button 
+                      onClick={handleSeeMore}
+                      variant="outline"
+                      className="border-green-900 text-green-900 hover:bg-green-50"
+                    >
+                      See More Prompts
+                    </Button>
+                  )}
+                  {isExpanded && (
+                    <Button 
+                      onClick={handleSeeLess}
+                      variant="outline"
+                      className="border-green-900 text-green-900 hover:bg-green-50"
+                    >
+                      See Less Prompts
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        )}
+        <Dialog open={!!selected} onOpenChange={() => {
+          setSelected(null);
+          setCopiedPromptId(null); // Reset copied state when dialog closes
+        }}>
+          <DialogContent className="max-w-2xl">
+            {selected && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-3">
+                    {selected.icon && iconMap[selected.icon]}
+                    {selected.title}
+                  </DialogTitle>
+                  <DialogDescription>{selected.description}</DialogDescription>
+                </DialogHeader>
+                <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                  <div className="font-semibold mb-2">PROMPT</div>
+                  <div className="whitespace-pre-line text-gray-900 mb-4">{selected.prompt_text}</div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleCopy(selected.prompt_text, selected.id)}
+                    className={`flex items-center gap-2 ${
+                      copiedPromptId === selected.id 
+                        ? 'border-green-600 text-green-600' 
+                        : 'border-green-900 text-green-900'
+                    } hover:bg-green-50`}
+                  >
+                    {copiedPromptId === selected.id ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy Prompt
+                      </>
+                    )}
+                  </Button>
         </div>
-        
-        <div>
-          <h2 className="text-xl font-bold mb-4">Prompt Categories</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockPrompts.map(prompt => (
-              <PromptCategoryCard 
-                key={prompt.id} 
-                title={prompt.title} 
-                description={prompt.description} 
-                count={prompt.count} 
-              />
-            ))}
-          </div>
-        </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
